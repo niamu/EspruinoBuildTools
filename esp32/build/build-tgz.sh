@@ -1,27 +1,38 @@
 #!/bin/bash
+
+set -ue
+
+BASE_PATH=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+ESPRUINO_BRANCH=${1:-RELEASE_2V08-picod4}
+
+if ! type xtensa-esp32-elf-gcc &> /dev/null; then
+    echo "xtensa-esp32-elf-gcc not found on PATH. Exiting."
+    exit 1
+fi
+
 # adjust paths to this folder versions
-export ESP_IDF_PATH=`pwd`/esp-idf
-export IDF_PATH=`pwd`/esp-idf
-export ESP_APP_TEMPLATE_PATH=`pwd`
+export ESP_IDF_PATH="$BASE_PATH/esp-idf"
+export ESP_APP_TEMPLATE_PATH="$BASE_PATH/app"
+export IDF_PATH="$ESP_IDF_PATH"
 
-cd app
-make app.tgz
-cd ../Espruino
+echo ""
+echo "--------------------------------------"
+echo "Using Espruino: $ESPRUINO_BRANCH"
+echo "--------------------------------------"
+echo ""
 
-rm -r  app
-rm -r esp-idf
+# checkout esp-idf branch and update submodule
+cd "$BASE_PATH/Espruino"
+git fetch origin
+git checkout $ESPRUINO_BRANCH
+git submodule update --init --recursive
 
-# copy newly build libs and expand
-tar xfz ../../deploy/esp-idf.tgz
-tar xfz ../../deploy/app.tgz
+# expand app.tgz and esp-idf.tgz into Espruino directory
+rm -rf "$IDF_PATH/../Espruino/app" "$IDF_PATH/../Espruino/esp-idf"
+tar xfz "$IDF_PATH/../../deploy/esp-idf.tgz" -C "$IDF_PATH/../Espruino/"
+tar xfz "$IDF_PATH/../../deploy/app.tgz" -C "$IDF_PATH/../Espruino/"
 
-git fetch
-git checkout $espruino_branch
-git pull
-# reset the IDF_PATH
-source ./scripts/provision.sh ESP32
 make clean
-BOARD=ESP32 make
-ln -s app/build/bootloader/bootloader.bin
-ln -s app/build/partitions_espruino.bin
-cat targets/esp32/README_flash.txt
+BOARD="ESP32" make
+
+cat "$BASE_PATH/Espruino/targets/esp32/README_flash.txt"

@@ -1,3 +1,6 @@
 [submodule "esp32/build/esp-idf"]
 	path = esp32/build/esp-idf
-	url = https://github.com/espressif/esp-idf.git
+	url = https://github.com/niamu/esp-idf.git
+[submodule "esp32/build/Espruino"]
+	path = esp32/build/Espruino
+	url = https://github.com/niamu/Espruino.git
